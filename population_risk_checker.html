@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>
+    【Dr.Assetチェッカー】「$input.json('$.apartment.buildingName')」の適正価格分析
+  </title>
+  <meta name="description"
+    content='$input.json("$.apartment.buildingName")の適正価格分析、表面利回分析、暮らしやすさ分析、リスク分析 | Dr.Assetチェッカー' />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0 minimum-scale=1.0" />
+  <link rel="stylesheet" href="https://drasset-checker.s3-ap-northeast-1.amazonaws.com/css/main.css" />
+  <link rel="stylesheet" href="https://drasset-checker.s3-ap-northeast-1.amazonaws.com/css/result.css" />
+  <link rel="stylesheet" href="https://drasset-risk-checker.s3-ap-northeast-1.amazonaws.com/css/grid_layout.css">
+  <!-- <link rel="stylesheet" href="grid_layout.css" /> -->
+  <!-- <link rel="stylesheet" href="https://drasset-checker.s3-ap-northeast-1.amazonaws.com/css/slidenav.css"> -->
+  <link rel="shortcut icon" type="image/x-icon"
+    href="https://www.estate-tech.co.jp/wp-content/themes/estate-technologies/favicon.ico" />
+  <link rel="icon" type="image/vnd.microsoft.icon"
+    href="https://www.estate-tech.co.jp/wp-content/themes/estate-technologies/favicon.ico" />
+  <link rel="apple-touch-icon"
+    href="https://www.estate-tech.co.jp/wp-content/themes/estate-technologies/apple-touch-icon.png" />
+
+  <!-- CSS only -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous" />
+
+  <!-- VueCLI用のBootstrapVue -->
+  <!-- Load required Bootstrap and BootstrapVue CSS -->
+  <!-- <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" /> -->
+  <!-- <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css" /> -->
+
+  <!-- Load polyfills to support older browsers -->
+  <!-- <script src="https://polyfill.io/v3/polyfill.min.js?features=es2015%2CIntersectionObserver" crossorigin="anonymous"></script> -->
+
+  <!-- Load Vue followed by BootstrapVue -->
+  <!-- <script src="https://unpkg.com/vue@latest/dist/vue.min.js"></script> -->
+  <!-- <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.js"></script> -->
+
+  <!-- Load the following for BootstrapVueIcons support -->
+  <!-- <script src="//unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue-icons.min.js"></script> -->
+
+  <!-- script file -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+  <style type="text/css"></style>
+</head>
+
+<body>
+  <div class="fadein">
+    <div class="wrapper center-margin" id="app">
+
+      <section name="population">
+        <h1 class="h1-title">人口増減率</h1>
+        <div id="population-grid" class="container">
+          <div id="description">
+            <p>過去の人口増減の分析、未来の人口増減の予測です。</p>
+          </div>
+          <div id="total-eval">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">総合判定</th>
+                <td class="risk-label" scope="col-8">
+                  人口が増加している区だといえます。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- 人工増減グラフ -->
+          <!--           <div id="contents">
+            <img
+              class="center-margin block"
+              src="https://drasset-risk-checker.s3-ap-northeast-1.amazonaws.com/population/nerima.png"
+              alt="city-population"
+            />
+          </div> -->
+          <!-- 人口増減グラフ -->
+          <div class="chart-container" style="position: relative; height: auto;">
+            <canvas id="StatisticsPopulationChart"></canvas>
+          </div>
+
+          <div id="conclusion">
+            <table class="table risk-table">
+              <tr>
+                <th class="risk-table">過去10年結果</th>
+                <th class="risk-table">将来10年結果</th>
+              </tr>
+              <tr>
+                <td class="risk-table">増加</td>
+                <td class="risk-table">増加</td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="explain">
+            <p>
+              {{estateCity}}の人口は、過去10年で{{Math.round((population - result["2010"]) / population * 100)}}％増加し、将来10年で{{Math.round((prediction["2030"] - population) / population * 100)}}％増加する予想です。
+              2020年現在、区の人口は{{population}}人、面積はおよそ{{area}}㎡、人口密度は{{density}}人/㎡です。
+              人口は23区中{{Populationrank}}番目に多く、人口密度は{{densityrank}}番目に高い区です。
+            </p>
+          </div>
+
+          <div id="caution">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  過去の動向は、将来の傾向を保証するものではありません。<br />
+                  また、不動産の価格が必ずしも人口増減に比例するわけではありませんのでご注意ください。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="source">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">出典</th>
+                <td class="risk-label" scope="col-8">
+                  区の過去の人口については、総務省統計局の人口データ<br />
+                  将来の人口については、総務省統計局の将来人口予測データで分析しています。
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section name="Earthquake_resistance">
+        <h1 class="h1-title">耐震性</h1>
+        <div id="population-grid" class="container">
+          <div id="description">
+            <p>
+              物件の築年数・構造と、熊本地震発生時の被害状況を参考に掲載しています。
+            </p>
+          </div>
+          <div id="total-eval">
+            <table class="table risk-table">
+              <tbody>
+                <tr>
+                  <th class="risk-table" scope="col-4">構造</th>
+                  <th class="risk-table" scope="col-4">築年数</th>
+                  <th class="risk-table" scope="col-4">新耐震/旧耐震</th>
+                </tr>
+                <tr class="risk-table">
+                  <td class="risk-table" scope="col-4">鉄筋コンクリート造</td>
+                  <td class="risk-table" scope="col-4">2003年6月</td>
+                  <td class="risk-table" scope="col-4">新耐震</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="contents">
+            <p>「熊本地震」当時の建物構造別被害状況</p>
+            <img class="center-margin block"
+              src="https://drasset-risk-checker.s3-ap-northeast-1.amazonaws.com/EarthquakeResistance/sample.png"
+              alt="EarthquakeResistance" />
+          </div>
+
+          <!-- <div id="conclusion">
+            <table class="es-summary">
+              <tr class="es-summary">
+                <th class="risk-table">過去10年結果</th>
+                <th class="risk-table">将来10年結果</th>
+              </tr>
+              <tr>
+                <td class="risk-table">増加</td>
+                <td class="risk-table">増加</td>
+              </tr>
+            </table>
+          </div> -->
+
+          <div id="explain">
+            <p>
+              熊本地震発生後、建築学会によって実施された、益城町中心部における悉皆調査における、
+              木造住宅の建築時期別の損傷比率を掲載しています。
+            </p>
+          </div>
+
+          <div id="caution">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  出典のデータや前提条件、判定手法の違いなどによって他の機関が公表している結果と異なる場合があり、また、データの更新や手法の精度向上などによって同じ地点でも更新前と異なる結果になる場合があります。<br />ご利用にあたっては、本レポートの記載
+                  内容だけでなく、必ず地方自治体等他の機関が公表しているハザードマップなども併せてご確認ください。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="source">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  国の熊本地震における建築物被害の原因分析を行う委員会 報告書
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section name="loan-calcurate">
+        <h1 class="h1-title">住宅ローン早見表</h1>
+        <div id="population-grid" class="container">
+          <div id="description">
+            <p>月々の住宅ローン支払い金額の目安です。</p>
+          </div>
+
+          <div id="contents">
+            <table class="table risk-table">
+              <thead>
+                <h2>{{ SecondMonth }}万円の場合</h2>
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="risk-table" scope="col-2">金利</th>
+                  <th class="risk-table" scope="col-2">15年</th>
+                  <th class="risk-table" scope="col-2">20年</th>
+                  <th class="risk-table" scope="col-2">25年</th>
+                  <th class="risk-table" scope="col-2">30年</th>
+                  <th class="risk-table" scope="col-2">35年</th>
+                </tr>
+                <tr>
+                  <td class="risk-table" scope="col-2">0.8%</td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.8,15) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.8,20) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.8,25) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.8,30) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.8,35) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="risk-table" scope="col-2">0.9%</td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.9,15) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.9,20) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.9,25) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.9,30) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(0.9,35) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="risk-table" scope="col-2">1.0%</td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.0,15) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.0,20) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.0,25) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.0,30) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.0,35) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="risk-table" scope="col-2">1.2%</td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.2,15) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.2,20) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.2,25) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.2,30) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.2,35) }}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="risk-table" scope="col-2">1.4%</td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.4,15) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.4,20) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.4,25) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.4,30) }}
+                  </td>
+                  <td class="risk-table" scope="col-2">
+                    {{ calc_loan(1.4,35) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- <div id="conclusion">
+                    <table class="es-summary">
+                        <tr class="es-summary">
+                        <th class="risk-table">就学前児童人口</th>
+                        <th class="risk-table">保育サービス利用児童数</th>
+                        <th class="risk-table">待機児童数</th>
+                        </tr>
+                        <tr>
+                        <td class="risk-table">減少</td>
+                        <td class="risk-table">増加</td>
+                        <td class="risk-table">減少</td>
+                        </tr>
+                    </table>
+                    </div> -->
+
+          <div id="explain">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">解説</th>
+                <td class="risk-label" scope="col-8">
+                  <p>
+                    100万円を住宅ローンで借りた場合の毎月返済額の目安であり、金額の単位は、（円）です。<br />
+                    上記返済額の目安は、「元利均等返済」で計算した場合の概算です。<br />
+                    ボーナス払い無しで計算しています。
+                  </p>
+                  【例】　1000万円分を借入れ、金利0.8％で35年ローンを組んだ場合、月々返済額の目安は27,300円となります。<br />
+                  【例】　2000万円分を借入れ、金利1.0％で30年ローンを組んだ場合、月々返済額の目安は64,320円となります。>
+
+                  元利均等返済とは 毎月お支払いいただく返済額が一定となる返済方法です。 元金均等返済とは 毎月お支払いいただく返済額のうち、元金の額が一定となる返済方法です。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="caution">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  上記の概算については、実際の返済額や将来の返済額を保証するものではありません。<br />
+                  また、ボーナス払いの有無や、元利均等返済/元金均等返済のどちらを選択するかによっても結果は変わってきます。<br />
+                  詳しくは、担当営業にお気軽にお問合せください。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- <div id="source">
+                    <table class="es-summary">
+                        <tr class="es-summary">
+                        <th class="risk-table">解説</th>
+                        <td class="risk-table">
+                            2019年07月29日 東京都福祉保健局　「都内の保育サービスの状況」
+                        </td>
+                        </tr>
+                    </table>
+                    </div> -->
+        </div>
+      </section>
+
+      <section name="waitingChild">
+        <h1 class="h1-title">待機児童対策</h1>
+        <button type="button" class="btn btn-primary" v-show="!showChild" @click="showSection()">
+          データを見る
+        </button>
+        <!-- <span v-show="loading" class="loading"
+          ><img
+            src="https://drasset-checker.s3-ap-northeast-1.amazonaws.com/img/loading.gif"
+            alt="loading"
+          /> -->
+        <div id="population-grid" class="container" v-show="showChild">
+          <div id="description">
+            <p>待機児童数で分析しています。</p>
+          </div>
+          <div id="total-eval">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">総合判定</th>
+                <td class="risk-label" scope="col-8">
+                  待機児童対策が進んでいる区だといえます。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="contents">
+            <table class="table risk-table">
+              <thead>
+                {{ estateCity }}
+              </thead>
+              <tbody>
+                <tr>
+                  <th class="risk-table">調査年</th>
+                  <th class="risk-table">就学前児童人口</th>
+                  <th class="risk-table">保育サービス利用児童数</th>
+                  <th class="risk-table">保育サービス利用比率</th>
+                  <th class="risk-table">待機児童数</th>
+                </tr>
+                <tr>
+                  <td class="risk-table">{{ currentChild.year }}年</td>
+                  <td class="risk-table">
+                    {{ currentChild.amount }}人
+                  </td>
+                  <td class="risk-table">{{ currentChild.users }}人</td>
+                  <td class="risk-table">
+                    {{ currentChild.rate }}%
+                  </td>
+                  <td class="risk-table">
+                    {{ currentChild.child }}人
+                  </td>
+                </tr>
+                <tr>
+                  <td class="risk-table">{{ previousChild.year }}年</td>
+                  <td class="risk-table">
+                    {{ previousChild.amount }}人
+                  </td>
+                  <td class="risk-table">{{ previousChild.users }}人</td>
+                  <td class="risk-table">
+                    {{ previousChild.rate }}%
+                  </td>
+                  <td class="risk-table">
+                    {{ previousChild.child }}人
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            *直近2年のデータを比較しています。
+          </div>
+
+          <div id="conclusion">
+            <table class="table risk-table">
+              <tr>
+                <th class="risk-table">就学前児童人口</th>
+                <th class="risk-table">保育サービス利用児童数</th>
+                <th class="risk-table">待機児童数</th>
+              </tr>
+              <tr>
+                <td class="risk-table">{{ checkVariation(variationChild.amount )}}</td>
+                <td class="risk-table">{{ checkVariation(variationChild.users )}}</td>
+                <td class="risk-table">{{ checkVariation(variationChild.child )}}</td>
+                <!-- <td class="risk-table">減少</td>
+                  <td class="risk-table">増加</td>
+                  <td class="risk-table">減少</td> -->
+              </tr>
+            </table>
+          </div>
+
+          <div id="feature">
+            <h2>区の特徴</h2>
+            <div class="description">
+              本区は、就学前児童人口が23区中{{ currentRanking.amount }}番目に多く、待機児童数の就学前児童人口に占める割合は{{ currentChild.rate }}％で、23区中{{ currentRanking.child }}番目に多い区です。<br />
+              <!-- 本区は、就学前児童人口が23区中〇番目に多く、待機児童数の就学前児童人口に占める割合は〇％で、23区中〇番目に多い区です。 -->
+              新規入園決定率は{{ rateRanking.rate }}％で、23区中{{ rateRanking.count }}位です。保育園には比較的入りやすい区といえそうです。
+            </div>
+          </div>
+
+
+          <div id="explain">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">解説</th>
+                <td class="risk-label" scope="col-8">
+                  保育園の入りやすさといえば、待機児童数を思い浮かべがちですが、もうひとつ注目したいのは、保育園の「新規入園決定率」。これは、認可保育園に申し込んだ児童数に対し、実際に入園できた児童数の割合を示したものです。
+                  待機児童は、人口数の違う自治体を比較していたり、定義が統一されておらず（厚生労働省が目安を決めているが運用に差がある）、どのくらい保育所に入れるのかを見るにはあまり参考にならないこともあります。
+                  保育所に入りたいと申請した人が、どのくらい入れているのかを比率で比較したのが、『新規入園決定率』です。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="caution">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  直近2年の傾向は、本年以降の傾向を保証するものではありません。<br />
+                  個別の保育所の動向については、区や対象の保育所にお問合せください。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="source">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">出典</th>
+                <td class="risk-label" scope="col-8">
+                  2019年07月29日 東京都福祉保健局　「都内の保育サービスの状況」<br />
+                  保育園を考える親の会「100都市保育力充実度チェック（2019年度版）」
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <!-- </span> -->
+      </section>
+
+      <section name="Criminal-info">
+        <h1 class="h1-title">近隣の犯罪履歴</h1>
+        <div id="population-grid" class="container">
+          <div id="description">
+            <p>近隣で起こった犯罪データを収集しています。</p>
+          </div>
+          <div id="total-eval">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">総合判定</th>
+                <td class="risk-label" scope="col-8">
+                  近隣の治安は、比較的良いと言えます。
+                </td>
+              </tr>
+            </table>
+          </div>
+
+          <div id="contents">
+            <table class="table risk-table">
+              <thead>
+                直近1年の{{ estateAddress }}の犯罪件数
+              </thead>
+              <!-- <div v-bind:class="{ mansionsWrap: mansions.length != 0 }">
+                <div v-for="(mansion, index) in mansions">
+                  <div
+                    v-if="index < 20"
+                    class="item"
+                    v-bind:class="{ isEven: index%2 == 1 }"
+                  >
+                    <p v-on:click="select(mansion)">
+                      {{mansion.buildingName}}
+                    </p>
+                  </div>
+                </div>
+              </div> -->
+              <tbody>
+                <tr>
+                  <th class="risk-table" scope="col-2">罪名</th>
+                  <th class="risk-table" scope="col-2">手口</th>
+                  <th class="risk-table" scope="col-3">発生年月日</th>
+                  <th class="risk-table" scope="col-2">発生時</th>
+                  <th class="risk-table" scope="col-3">発生場所</th>
+                </tr>
+                <tr v-show="!showCrime">
+                  <td class="risk-table" scope="col-2">データ受信中..</td>
+                  <td class="risk-table" scope="col-2">データ受信中..</td>
+                  <td class="risk-table" scope="col-3">データ受信中..</td>
+                  <td class="risk-table" scope="col-2">データ受信中..</td>
+                  <td class="risk-table" scope="col-3">データ受信中..</td>
+                </tr>
+                <tr v-for="(row, index) in crimeList" v-show="showCrime">
+                  <td class="risk-table" scope="col-2" v-if="index < 10">窃盗</td>
+                  <td class="risk-table" scope="col-2" v-if="index < 10">{{ row.DamageType }}</td>
+                  <td class="risk-table" scope="col-3" v-if="index < 10">{{ row.row_data.occur_time.date }}</td>
+                  <td class="risk-table" scope="col-2" v-if="index < 10">{{ row.row_data.occur_time.hour }}</td>
+                  <td class="risk-table" scope="col-3" v-if="index < 10">{{ row.row_data.occur_case.type }}</td>
+                </tr>
+                <!-- <tr v-for="value in classes">
+                  <th>{{ value.name }}</th>
+                  <td v-for="member in value.members">{{ member }}</td>
+                </tr> -->
+              </tbody>
+            </table>
+          </div>
+
+          <div id="conclusion">
+            <table class="table risk-table">
+              <thead>
+                直近1年の{{ estateAddress }}の重犯罪件数
+              </thead>
+              <tr>
+                <!-- <th class="risk-table" scope="col-3">全体件数</th> -->
+                <th class="risk-table" scope="col-3">重犯罪件数</th>
+                <th class="risk-table" scope="col-3">軽犯罪件数</th>
+                <th class="risk-table" scope="col-3">発生頻度</th>
+              </tr>
+              <tr>
+                <!-- <td class="risk-table" scope="col-3">4件</td> -->
+                <td class="risk-table" scope="col-3">{{ seriousCrimeSum }}件</td>
+                <td class="risk-table" scope="col-3">{{ crimeList.length }}件</td>
+                <td class="risk-table" scope="col-3">{{ crimeFrequency }}</td>
+              </tr>
+            </table>
+
+            <!-- <table class="es-summary">
+              <tr class="es-summary">
+                <th class="risk-table">全体件数</th>
+                <th class="risk-table">発生頻度</th>
+                <th class="risk-table">重要犯罪件数</th>
+                <th class="risk-table">住宅での件数</th>
+              </tr>
+              <tr>
+                <td class="risk-table">4件</td>
+                <td class="risk-table">半年に二回程度</td>
+                <td class="risk-table">0件</td>
+                <td class="risk-table">2件</td>
+              </tr>
+            </table> -->
+          </div>
+
+          <h1>{{ prediction }}</h1>
+          <h1>{{ prediction["2020"] }}</h1>
+          <h1>{{estateCity}}</h1>
+          <h1>{{Populationrank}}</h1>
+
+          <div id="explain">
+            <p>
+              ・犯罪履歴については、町丁目ごとの絞り込みで収集しています。<br />
+              ・「直近1年」とは、2019年を指し、年に1度更新しています。<br />
+              ・発生頻度が1ヵ月に1件未満の地域を「非常に治安が良い」、1件以上1.5件未満の地域を「比較的治安が良い」、1.5件以上2件未満の地域を「普通」、2件以上の地域を「治安に注意が必要」としています。<br />
+              ・重犯罪が1年に2件以上ある場合も「治安に注意が必要」としています。<br />
+              ・重要犯罪件数とは、以下を指します。<br />
+              殺人、強盗、放火、強制性交等、略取誘拐・人身売買、強制わいせつ
+            </p>
+          </div>
+          <div id="caution">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">注意</th>
+                <td class="risk-label" scope="col-8">
+                  ・詳細な情報については対象地点の市区町村が公表している治安情報などをご確認ください。<br />
+                  ・システムで自動的に処理しているため、実態とは異なる場合があります。
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div id="source">
+            <table class="table risk-label">
+              <tr>
+                <th class="risk-label" scope="col-4">出典</th>
+                <td class="risk-label" scope="col-8">
+                  警視庁「犯罪発生情報(年計)」及び「区市町村の町丁別、罪種別及び手口別認知件数」
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const app = new Vue({
+      el: "#app",
+      data: {
+        // 適正価格
+        SecondMonth: 2830,
+
+        // section:待機児童
+        showChild: false,
+        responseChild: {},
+        currentChild: {},
+        previousChild: {},
+        variationChild: {},
+        currentRanking: {},
+        previousRanking: {},
+        rateRanking: {},
+
+        // section:人工増減
+        showPopulation: false,
+        StatisticsPopulation: {},
+        prediction: {},
+        result: {},
+        PopulationData: [],
+
+        // section:人工密度
+        showPopulation: false,
+        Populationdensity: {},
+        area: {},
+        density: {},
+        population: {},
+        Populationrank: {},
+        densityrank: {},
+
+        // section: 犯罪情報
+        showCrime: false,
+        responseCrime: {},
+        seriousCrimeSum: 0,
+        crimeList: [],
+        crimeFrequency: "--",
+
+
+        // currentChild: this.responseChild.current,
+        // previousChild: this.responseChild.previous,
+        // variationChild: this.responseChild.variation,
+        estateCity: "板橋区",
+        estateAddress: "東京都渋谷区千駄ヶ谷4丁目",
+        sendLogShow: true,
+        loading: false
+      },
+      mounted: async function () {
+        // this.fetchChildData(this,estateCity);
+        this.fetchCrimeData(this.estateAddress);
+        this.StatisticsPopulationData(this.estateCity);
+        this.PopulationdensityData(this.estateCity);
+
+
+        console.log("mounted");
+
+
+      },
+      methods: {
+        makeGraph: function () {
+          // chart.jsの描画
+          const ctx = document.getElementById("StatisticsPopulationChart");
+          const StatisticsPopulationChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: ['1980', '1985', '1990', '1995', '2000', '2005', '2010', '2015', '2020', '2025', '2030',
+                '2035', '2040', '2045'],
+              datasets: [
+                {
+                  label: 'result',
+                  data: this.Population_func(re=8),
+                  borderColor: ["rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(250,170,70,1)"],
+                  backgroundColor: "rgba(0,0,0,0)",
+                  pointBackgroundColor: ["rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(73,175,183,1)","rgba(250,170,70,1)"]
+                },
+                {
+                  label: 'prediction',
+                  data: this.Population_func(pre=13),
+                  borderColor: "rgba(250,170,70,1)",
+                  backgroundColor: "rgba(0,0,0,0)",
+                  pointBackgroundColor: "rgba(250,170,70,1)"
+                }
+              ],
+            },
+            options: {
+              // グラフの詳細　グラフをマウスオーバーした際の詳細
+              tooltips: {
+                enabled: true,
+              },
+              title: {
+                display: false,
+                text: '人口増減グラフ'
+              },
+              // アニメーション
+              animation: false,
+              // オンにする事でデータラベルが表示
+              legend: {
+                display: true
+              },
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    suggestedMax: 0,
+                    suggestedMin: 800000,
+                    stepSize: 100000,
+                  }
+                }]
+                // xAxes: [{
+                //   scaleLabel: { display: true, labelString: '価格(万円)', },
+                //   type: 'linear',
+                //   position: 'bottom',
+                //   ticks: {
+                //     min: Math.round(this.putDeviationAxis(xmin) / 100) * 100,
+                //     max: Math.round(this.putDeviationAxis(xmax) / 100) * 100
+                //   }
+                // }]
+              },
+            }
+          });
+        },
+
+        //////////////
+        // 住宅ローン //
+        //////////////              
+        calc_loan: function (loanRate, years) {
+          const price = this.SecondMonth * 10000;
+          const monthlyLoan = loanRate / 100 / 12;
+          const n = years * 12;
+          const monthlyPayment =
+            (price * monthlyLoan * (1 + monthlyLoan) ** n) /
+            ((1 + monthlyLoan) ** n - 1);
+          return parseInt(monthlyPayment);
+        },
+        /////////////
+        // 待機児童 //
+        /////////////
+        isPositiveNum: function (num) {
+          if (parseInt(num) > 0) {
+            text = "positive"
+          } else if (parseInt(num) < 0) {
+            text = "negative"
+          } else if (num === 0) {
+            text = "neutral"
+          } else {
+            text = "isPositiveNum is error"
+            console.log(text);
+          }
+          return text
+        },
+        showSection: function ($data) {
+          console.log("section");
+          this.showChild = true;
+          this.loading = true;
+          // city = this.estateCity;
+          this.fetchChildData(this.estateCity);
+          // this.$data = true;
+        },
+        checkVariation: function (num) {
+          text = this.isPositiveNum(num);
+          if (text == "positive") {
+            return "増加"
+          } else if (text === "negative") {
+            return "減少"
+          } else if (text == "zero") {
+            return "変化なし"
+          } else {
+            return "checkVariation is error"
+          }
+        },
+        /////////////
+        // 待機児童 //
+        /////////////
+        fetchChildData: async function (estateCity) {
+          console.log("axios:child");
+          await axios
+            .post(
+              "https://qi7yzvnj3c.execute-api.ap-northeast-1.amazonaws.com/test/waitingchild",
+              // https://qi7yzvnj3c.execute-api.ap-northeast-1.amazonaws.com/test/StatisticsPopulationnfo
+              {
+                // city: this.estateCity
+                city: estateCity
+              }
+            )
+            .then(response => {
+              console.log(response);
+              this.responseChild = response.data.body.contents.data;
+              this.currentChild = this.responseChild.current;
+              this.previousChild = this.responseChild.previous;
+              this.variationChild = this.responseChild.variation;
+              this.currentRanking = this.responseChild.current.ranking;
+              this.previousRanking = this.responseChild.previous.ranking;
+              this.rateRanking = response.data.body.rate;
+              console.log(this.responseChild);
+            })
+            .catch(error => {
+              console.log(response.status);
+              console.log(error);
+            });
+          this.loading = false;
+        },
+        /////////////
+        // 人工増減 //
+        /////////////
+        StatisticsPopulationData: async function (estateCity) {
+          console.log("axios:Population");
+          await axios
+            .post(
+              "https://qi7yzvnj3c.execute-api.ap-northeast-1.amazonaws.com/test/StatisticsPopulationnfo", {
+                // city: this.estateCity
+                address: estateCity
+              }
+            )
+            .then(response => {
+              console.log(response);
+              this.StatisticsPopulation = response.data.body.StatisticsPopulation[0].data;
+              this.prediction = this.StatisticsPopulation.prediction;
+              this.result = this.StatisticsPopulation.result;
+              console.log(this.StatisticsPopulation);
+              this.makeGraph()
+            })
+            .catch(error => {
+              console.log(error.status);
+              console.log(error);
+            });
+          this.loading = false;
+        },
+        /////////////
+        // 人工増減 //
+        /////////////
+        Population_func: function (nx) {
+          console.log("test");
+          const pre = this.prediction;
+          const re = this.result;
+          console.log(nx);
+          // const nx = 8;
+          let displayData = [];
+          for (let i = 0; i < nx + 1; i++) {
+            var x = 1980 + (i * 5);
+            if (x < 2020) {
+              if(nx == 8){
+                var y = re[x];
+              }
+              else{
+                displayData.push()
+              }
+            } else {
+              console.log(pre);
+              var y = pre[x]
+            }
+            // var y = re[x];
+            displayData.push({
+              x: x,
+              y: y
+            });
+          }
+          console.log(displayData);
+          return displayData;
+        },
+        /////////////
+        // 人工密度 //
+        /////////////
+        PopulationdensityData: async function (estateCity) {
+          console.log("axios:density");
+          await axios
+            .post(
+              "https://qi7yzvnj3c.execute-api.ap-northeast-1.amazonaws.com/test/PopulationdensityInfo", {
+                // city: this.estateCity
+                address: estateCity
+              }
+            )
+            .then(response => {
+              console.log(response);
+              this.Populationdensity = response.data.body.Populationdensity[0].data;
+              this.area = this.Populationdensity.area;
+              this.density = this.Populationdensity.density;
+              this.population = this.Populationdensity.population;
+              this.Populationrank = response.data.body.Populationrank;
+              this.densityrank = response.data.body.densityrank;
+              console.log(this.Populationdensity);
+            })
+            .catch(error => {
+              console.log(error.status);
+              console.log(error);
+            });
+          this.loading = false;
+        },
+        /////////////
+        // 犯罪情報 //
+        /////////////
+        getFrequency: function (num) {
+          // 犯罪情報に利用する関数
+          if (num === 0) {
+            return "なし。"
+          } else if (2 > num && num >= 1) {
+            return "１年に１回。"
+          } else if (6 > num && num >= 2) {
+            return "半年に１回以上。"
+          } else if (12 > num && num >= 6) {
+            return "2ヶ月に１回以上。"
+          } else if (50 > num && num >= 12) {
+            return "月に1回以上。"
+          } else if (365 > num && num >= 50) {
+            return "週に一回以上。"
+          } else {
+            console.log("getFrequency error");
+            return "--"
+          }
+        },
+        fetchCrimeData: async function (estateAddress) {
+          console.log("axios:Crime");
+          await axios.post(
+              "https://qi7yzvnj3c.execute-api.ap-northeast-1.amazonaws.com/test/crimeinfo", {
+                address: estateAddress
+              }
+            )
+            .then(response => {
+              console.log("crimeInfo");
+              console.log(response);
+              this.responseCrime = response.data.body;
+              this.seriousCrimeSum = this.responseCrime.seriousCrimeInfo[0].SeriousSum;
+              this.crimeList = this.responseCrime.crimeInfo;
+              const crimeSum = this.crimeList.length;
+              this.crimeFrequency = this.getFrequency(crimeSum);
+              this.showCrime = true;
+              console.log(this.crimeFrequency);
+              console.log(this.responseCrime);
+            })
+            .catch(error => {
+              console.log(error);
+              this.crimeList = [{
+                "DamageType": "準備中",
+                "row_data": {
+                  "occur_time": {
+                    "hour": "準備中"
+                  },
+                  "occur_case": {
+                    "type": "準備中"
+                  }
+                }
+              }]
+              this.showCrime = true;
+            });
+          this.loading = false;
+        },
+      }
+    });
+  </script>
+</body>
+
+</html>
